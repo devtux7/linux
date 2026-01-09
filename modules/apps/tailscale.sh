@@ -98,12 +98,51 @@ EOF
                 ;;
         esac
         
+        print_message "\n📡 Ağ Optimizasyonları (MTU & MSS Clamping) ayarlanıyor..." "$YELLOW"
+        
+        # 1. MTU Ayarı (1280 - WireGuard default safe value)
+        # Interface'in gelmesini bekle (kısa bir süre)
+        timeout_counter=0
+        while ! ip link show tailscale0 > /dev/null 2>&1; do
+             sleep 1
+             ((timeout_counter++))
+             if [ $timeout_counter -ge 10 ]; then break; fi
+        done
+
+        if ip link show tailscale0 > /dev/null 2>&1; then
+             sudo ip link set dev tailscale0 mtu 1280 || true
+             print_message "✅ Tailscale MTU: 1280 olarak ayarlandı." "$GREEN"
+        else
+             print_message "⚠️  Uyarı: tailscale0 arayüzü henüz hazır değil, MTU ayarı atlandı." "$YELLOW"
+        fi
+
+        # 2. MSS Clamping (Paket parçalanmasını önler - Hız için KRİTİK)
+        # iptables kurulu mu kontrol et
+        if command -v iptables > /dev/null; then
+             # Mevcut kural varsa tekrar ekleme
+             if ! sudo iptables -t mangle -C FORWARD -i tailscale0 -o eth0 -p tcp -m tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu 2>/dev/null; then
+                 sudo iptables -t mangle -A FORWARD -i tailscale0 -o eth0 -p tcp -m tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu || true
+                 print_message "✅ TCP MSS Clamping kuralı eklendi." "$GREEN"
+                 
+                 # Kalıcılık için rc.local'a ekle (basit yöntem)
+                 if [[ ! -f /etc/rc.local ]]; then
+                     echo '#!/bin/bash' | sudo tee /etc/rc.local
+                     echo 'exit 0' | sudo tee -a /etc/rc.local
+                     sudo chmod +x /etc/rc.local
+                 fi
+                 
+                 CMD="iptables -t mangle -A FORWARD -i tailscale0 -o eth0 -p tcp -m tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu"
+                 if ! grep -q "TCPMSS --clamp-mss-to-pmtu" /etc/rc.local; then
+                      sudo sed -i -e '$i '"$CMD"'\n' /etc/rc.local
+                 fi
+             fi
+        fi
+
         print_message "\n⚠️  ÖNEMLİ: Tailscale Exit Node modu ile başlatılıyor!" "$GREEN"
         print_message "Kurulum sonrası ekrana gelen linke tıklayın ve Admin Panel'den 'Edit Route Settings' -> 'Use as Exit Node' seçeneğini işaretleyin." "$YELLOW"
         
         # Exit node olarak başlatma komutu (kullanıcının linke basıp login olması gerekir)
         print_message "Aşağıdaki komutu kopyalayıp çalıştırın:\nsudo tailscale up --advertise-exit-node" "$GREEN"
-        
     else
         print_message "ℹ️  Standart kurulum yapıldı (Exit Node kapalı)." "$YELLOW"
         print_message "Aşağıdaki komutu kopyalayıp çalıştırın:\nsudo tailscale up" "$GREEN"
