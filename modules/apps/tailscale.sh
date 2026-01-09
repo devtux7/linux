@@ -32,8 +32,8 @@ install_tailscale() {
         print_message "⚙️  IP Forwarding (Yönlendirme) açılıyor..." "$YELLOW"
         
         # IP Forwarding aktif et
-        echo 'net.ipv4.ip_forward = 1' | sudo tee -a /etc/sysctl.d/99-tailscale.conf
-        echo 'net.ipv6.conf.all.forwarding = 1' | sudo tee -a /etc/sysctl.d/99-tailscale.conf
+        echo 'net.ipv4.ip_forward = 1' | sudo tee -a /etc/sysctl.d/99-tailscale.conf > /dev/null
+        echo 'net.ipv6.conf.all.forwarding = 1' | sudo tee -a /etc/sysctl.d/99-tailscale.conf > /dev/null
         # sysctl hatası scripti durdurmasın (Sanal ortamlarda yazma izni olmayabilir)
         sudo sysctl -p /etc/sysctl.d/99-tailscale.conf >> "$LOG_FILE" 2>&1 || print_message "⚠️  Uyarı: sysctl ayarları uygulanamadı (Sanal ortam kısıtlaması olabilir)." "$YELLOW"
         
@@ -49,7 +49,7 @@ install_tailscale() {
                 print_message "🛠️  VPS optimizasyonları uygulanıyor (BBR, UDP Buffer)..." "$YELLOW"
                 
                 # BBR Congestion Control & UDP Buffer
-                cat <<EOF | sudo tee -a /etc/sysctl.d/99-tailscale.conf
+                cat <<EOF | sudo tee -a /etc/sysctl.d/99-tailscale.conf > /dev/null
 net.core.default_qdisc = fq
 net.ipv4.tcp_congestion_control = bbr
 net.core.rmem_max = 26214400
@@ -62,7 +62,7 @@ EOF
                 print_message "🛠️  Raspberry Pi optimizasyonları uygulanıyor (UDP Offload, BBR)..." "$YELLOW"
                 
                 # BBR & UDP Buffer
-                cat <<EOF | sudo tee -a /etc/sysctl.d/99-tailscale.conf
+                cat <<EOF | sudo tee -a /etc/sysctl.d/99-tailscale.conf > /dev/null
 net.core.default_qdisc = fq
 net.ipv4.tcp_congestion_control = bbr
 net.core.rmem_max = 26214400
@@ -81,8 +81,8 @@ EOF
                     if ! grep -q "ethtool -K $NET_IFACE rx-udp-gro-forwarding on" /etc/rc.local 2>/dev/null; then
                          # rc.local yoksa oluştur
                          if [[ ! -f /etc/rc.local ]]; then
-                             echo '#!/bin/bash' | sudo tee /etc/rc.local
-                             echo 'exit 0' | sudo tee -a /etc/rc.local
+                             echo '#!/bin/bash' | sudo tee /etc/rc.local > /dev/null
+                             echo 'exit 0' | sudo tee -a /etc/rc.local > /dev/null
                              sudo chmod +x /etc/rc.local
                          fi
                          # exit 0 satırından önceye ekle
@@ -126,8 +126,8 @@ EOF
                  
                  # Kalıcılık için rc.local'a ekle (basit yöntem)
                  if [[ ! -f /etc/rc.local ]]; then
-                     echo '#!/bin/bash' | sudo tee /etc/rc.local
-                     echo 'exit 0' | sudo tee -a /etc/rc.local
+                     echo '#!/bin/bash' | sudo tee /etc/rc.local > /dev/null
+                     echo 'exit 0' | sudo tee -a /etc/rc.local > /dev/null
                      sudo chmod +x /etc/rc.local
                  fi
                  
