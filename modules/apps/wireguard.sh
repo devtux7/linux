@@ -19,7 +19,7 @@ install_wireguard() {
     chmod +x wireguard-install.sh
 
     print_message "⚙️  Kurulum başlıyor... (Lütfen soruları cevaplayın)" "$YELLOW"
-    ./wireguard-install.sh
+    sudo bash wireguard-install.sh
 
     # Kurulum sonrası optimizasyonlar
     if [[ -f "/etc/wireguard/wg0.conf" ]]; then
