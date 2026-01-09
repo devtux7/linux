@@ -3,6 +3,15 @@
 install_wireguard() {
     print_message "\n🛡️  WIREGUARD VPN SERVER KURULUMU" "$CYAN"
     print_message "─────────────────────────────────" "$BLUE"
+    
+    print_message "⚠️  DİKKAT: Bu modül için sunucunuzun PUBLIC IP (Statik) adresi olmalıdır." "$RED"
+    print_message "Ev interneti (CGNAT) veya modemin arkasındaki cihazlarda çalışmayabilir." "$YELLOW"
+    print_message "Eğer ev sunucusu kullanıyorsanız 'Tailscale' modülünü tercih ediniz." "$YELLOW"
+    echo ""
+    read -p "Devam etmek istiyor musunuz? (E/h): " wg_confirm
+    if [[ ! "$wg_confirm" =~ ^[Ee]$ ]]; then
+         return
+    fi
 
     if sudo test -f "/etc/wireguard/wg0.conf"; then
         print_message "✅ WireGuard zaten kurulu görünüyor (/etc/wireguard/wg0.conf mevcut)." "$YELLOW"
@@ -34,10 +43,9 @@ install_wireguard() {
         print_message "─────────────────────────────" "$PURPLE"
         
         echo ""
-        print_message "Performans Optimizasyonu İçin Donanım Seçin:" "$CYAN"
-        echo "1) ☁️  Standart VPS / x86 Sunucu (DigitalOcean, AWS, vb.)"
-        echo "2) 🍓 Raspberry Pi 4/5 veya ARM Kartlar"
-        echo "3) ⏭️  Atla (Optimizasyon yapma)"
+        print_message "Performans Optimizasyonu:" "$CYAN"
+        echo "1) ☁️  Standart VPS / Sunucu (DigitalOcean, AWS, vb.)"
+        echo "2) ⏭️  Atla (Optimizasyon yapma)"
         echo ""
         read -p "Seçiminiz: " hardware_choice
 
@@ -47,8 +55,8 @@ install_wireguard() {
 
         # 2. Sysctl Optimizasyonları (Hardware Bazlı)
         case $hardware_choice in
-            1|2)
-                print_message "🛠️  Genel optimizasyonlar uygulanıyor (BBR, UDP Buffer)..." "$YELLOW"
+            1)
+                print_message "🛠️  VPS optimizasyonları uygulanıyor (BBR, UDP Buffer)..." "$YELLOW"
                 cat <<EOF | sudo tee -a /etc/sysctl.d/99-wireguard-opt.conf > /dev/null
 net.core.default_qdisc = fq
 net.ipv4.tcp_congestion_control = bbr
@@ -57,25 +65,6 @@ net.core.wmem_max = 26214400
 EOF
                 # Sysctl uygula (Hata verirse devam et - Fail-safe)
                 sudo sysctl -p /etc/sysctl.d/99-wireguard-opt.conf >> "$LOG_FILE" 2>&1 || print_message "⚠️  Uyarı: BBR/Buffer ayarları uygulanamadı." "$YELLOW"
-                
-                # Raspberry Pi Özel (UDP GRO)
-                if [[ "$hardware_choice" == "2" ]]; then
-                    if command -v ethtool &> /dev/null; then
-                        NET_IFACE=$(ip route sh | grep default | awk '{print $5}')
-                        print_message "Rx-UDP-GRO aktif ediliyor ($NET_IFACE)..." "$YELLOW"
-                        sudo ethtool -K "$NET_IFACE" rx-udp-gro-forwarding on >> "$LOG_FILE" 2>&1 || true
-                        
-                        # Kalıcılık (rc.local)
-                        if [[ ! -f /etc/rc.local ]]; then
-                             echo '#!/bin/bash' | sudo tee /etc/rc.local > /dev/null
-                             echo 'exit 0' | sudo tee -a /etc/rc.local > /dev/null
-                             sudo chmod +x /etc/rc.local
-                        fi
-                        if ! grep -q "ethtool -K $NET_IFACE rx-udp-gro-forwarding on" /etc/rc.local 2>/dev/null; then
-                             sudo sed -i -e '$i \ethtool -K '"$NET_IFACE"' rx-udp-gro-forwarding on\n' /etc/rc.local
-                        fi
-                    fi
-                fi
                 ;;
             *)
                 print_message "ℹ️  Donanım optimizasyonu atlandı." "$YELLOW"
