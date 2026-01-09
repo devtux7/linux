@@ -4,7 +4,7 @@ install_wireguard() {
     print_message "\n🛡️  WIREGUARD VPN SERVER KURULUMU" "$CYAN"
     print_message "─────────────────────────────────" "$BLUE"
 
-    if [[ -f "/etc/wireguard/wg0.conf" ]]; then
+    if sudo test -f "/etc/wireguard/wg0.conf"; then
         print_message "✅ WireGuard zaten kurulu görünüyor (/etc/wireguard/wg0.conf mevcut)." "$YELLOW"
         print_message "Yine de kurulum scriptini çalıştırmak (yeni kullanıcı eklemek/kaldırmak için) ister misiniz?" "$CYAN"
         read -p "Seçiminiz (E/h): " wg_reinstall
@@ -29,7 +29,7 @@ install_wireguard() {
     sudo bash wireguard-install.sh
 
     # Kurulum sonrası optimizasyonlar
-    if [[ -f "/etc/wireguard/wg0.conf" ]]; then
+    if sudo test -f "/etc/wireguard/wg0.conf"; then
         print_message "\n🚀 WIREGUARD OPTİMİZASYONLARI" "$PURPLE"
         print_message "─────────────────────────────" "$PURPLE"
         
