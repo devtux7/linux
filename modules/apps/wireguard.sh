@@ -18,6 +18,13 @@ install_wireguard() {
     curl -O https://raw.githubusercontent.com/angristan/wireguard-install/master/wireguard-install.sh
     chmod +x wireguard-install.sh
 
+    # PATCH: LXC/Container kontrolünü devre dışı bırak (OrbStack desteği için)
+    print_message "🔧 Sanallaştırma kontrolleri yamalanıyor (OrbStack/LXC Fix)..." "$YELLOW"
+    
+    # checkVirt fonksiyonunun çağrıldığı satırı yorum satırı yap
+    # Bu, LXC/OpenVZ kontrolünü tamamen devre dışı bırakır
+    sed -i 's/^\tcheckVirt/#\tcheckVirt/' wireguard-install.sh
+
     print_message "⚙️  Kurulum başlıyor... (Lütfen soruları cevaplayın)" "$YELLOW"
     sudo bash wireguard-install.sh
 
