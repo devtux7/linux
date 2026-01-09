@@ -72,7 +72,6 @@ if [[ -f "$MODULES_DIR/utils.sh" ]]; then
     source "$MODULES_DIR/utils.sh"
 else
     echo "❌ HATA: Kritik modül bulunamadı: utils.sh"
-    # Fallback to local if MODULES_DIR setup failed unexpectedly, though exit 1 above handles it.
     exit 1
 fi
 
@@ -102,24 +101,10 @@ trap 'echo -e "\033[0;31m❌ Beklenmedik hata oluştu. Script durduruldu.\033[0m
 trap 'echo -e "\033[0;31m\n❌ Kullanıcı tarafından iptal edildi.\033[0m"; cleanup' INT
 
 # =============================================================================
-# ANA FONKSİYON
+# ALT AKIŞ FONKSİYONLARI
 # =============================================================================
-main() {
-    clear
-    print_message "\n🎯 ============================================" "$PURPLE"
-    print_message "     Ubuntu Server SSH Kurulum Scripti" "$PURPLE"
-    print_message "     Geliştirilmiş ve Güvenli Versiyon (Modüler)" "$PURPLE"
-    print_message "============================================\n" "$PURPLE"
 
-    # Log dosyasını başlat
-    touch "$LOG_FILE"
-    chmod 600 "$LOG_FILE"
-    log_message "Script başlatıldı"
-
-    # Başlangıç kontrolleri
-    check_root
-    check_internet
-
+run_security_setup() {
     # Sistem bilgilerini göster
     show_system_info
 
@@ -146,28 +131,20 @@ main() {
 
     # 2FA konfigürasyonu
     if [[ "$AUTH_CHOICE" == "2" || "$AUTH_CHOICE" == "4" ]]; then
-        # Geçici olarak hata yakalamayı devre dışı bırak
         set +e
         trap - ERR
-
         print_message "\n🔄 2FA konfigürasyonu başlatılıyor..." "$YELLOW"
         configure_2fa
-
-        # Hata yakalamayı ve trap'i geri yükle
         set -e
         trap 'echo -e "\033[0;31m❌ Beklenmedik hata oluştu. Script durduruldu.\033[0m"' ERR
     fi
 
     # SSH anahtar yönetimi
     if [[ "$AUTH_CHOICE" == "3" || "$AUTH_CHOICE" == "4" ]]; then
-        # Geçici olarak hata yakalamayı devre dışı bırak
         set +e
         trap - ERR
-
         print_message "\n🔄 SSH anahtar yönetimi başlatılıyor..." "$YELLOW"
         manage_ssh_keys
-
-        # Hata yakalamayı ve trap'i geri yükle
         set -e
         trap 'echo -e "\033[0;31m❌ Beklenmedik hata oluştu. Script durduruldu.\033[0m"' ERR
     fi
@@ -180,18 +157,81 @@ main() {
 
     # SSH servisini yeniden başlat
     restart_ssh_service
+}
 
-    # Ekstra Uygulamalar
+run_apps_setup() {
+    # Eğer NEW_USER tanımlı değilse (Sadece Uygulama Modu), mevcut kullanıcıyı al
+    if [[ -z "${NEW_USER:-}" ]]; then
+        NEW_USER=$(whoami)
+        # Root kontrolü (App kurulumları genelde kullanıcı bazlı işlemler de yapar, örn. docker group)
+        if [[ "$NEW_USER" == "root" ]]; then
+             print_message "⚠️  UYARI: Root kullanıcısı ile uygulama kurulumu yapıyorsunuz." "$YELLOW"
+             print_message "Docker grubu gibi yetkiler root kullanıcısına eklenecektir." "$YELLOW"
+        fi
+    fi
+
     install_selected_apps
+}
 
-    # Kurulum özeti
-    show_summary
+# =============================================================================
+# ANA FONKSİYON
+# =============================================================================
+main() {
+    clear
+    print_message "\n🎯 ============================================" "$PURPLE"
+    print_message "     UBUNTU SERVER TOOLKIT" "$PURPLE"
+    print_message "     Geliştirilmiş ve Güvenli Yönetim Aracı" "$PURPLE"
+    print_message "============================================\n" "$PURPLE"
 
-    print_message "\n🎉 KURULUM TAMAMLANDI!" "$GREEN"
+    # Log dosyasını başlat
+    touch "$LOG_FILE"
+    chmod 600 "$LOG_FILE"
+    log_message "Toolkit başlatıldı"
+
+    # Başlangıç kontrolleri
+    check_root
+    check_internet
+    
+    # ANA MENÜ
+    print_message "Lütfen yapmak istediğiniz işlemi seçin:" "$CYAN"
+    echo ""
+    echo "1) 🚀 Tam Kurulum (Güvenlik + Uygulamalar)"
+    echo "2) 🛡️  Sadece Güvenlik (SSH, Fail2Ban, UFW, vb.)"
+    echo "3) 📦 Sadece Uygulamalar (Apps Menu)"
+    echo ""
+    
+    read -p "Seçiminiz (1/2/3): " main_choice
+    
+    case $main_choice in
+        1)
+            # TAM KURULUM
+            log_message "Mod: Tam Kurulum Seçildi"
+            run_security_setup
+            run_apps_setup
+            show_summary
+            ;;
+        2)
+            # SADECE GÜVENLİK
+            log_message "Mod: Sadece Güvenlik Seçildi"
+            run_security_setup
+            show_summary
+            ;;
+        3)
+            # SADECE UYGULAMALAR
+            log_message "Mod: Sadece Uygulamalar Seçildi"
+            run_apps_setup
+            ;;
+        *)
+            print_message "❌ Geçersiz seçim! Çıkış yapılıyor." "$RED"
+            exit 1
+            ;;
+    esac
+
+    print_message "\n🎉 İŞLEM TAMAMLANDI!" "$GREEN"
     print_message "════════════════════════════════════════════════════════════════════════════════" "$PURPLE"
 
     # Log dosyasını kapat
-    log_message "Kurulum tamamlandı"
+    log_message "İşlem tamamlandı"
 }
 
 # =============================================================================
