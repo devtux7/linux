@@ -8,6 +8,7 @@ install_tailscale() {
         print_message "✅ Tailscale zaten kurulu" "$GREEN"
     else
         print_message "📥 Tailscale GPG key ve repo ekleniyor..." "$YELLOW"
+        print_message "⚙️  Tailscale paketleri indiriliyor ve kuruluyor (Lütfen bekleyin)..." "$YELLOW"
         curl -fsSL https://tailscale.com/install.sh | sh >> "$LOG_FILE" 2>&1
         
         if command -v tailscale &> /dev/null; then

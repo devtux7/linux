@@ -22,7 +22,7 @@ if [[ -d "$SCRIPT_DIR/modules" ]]; then
     CLEANUP_REQUIRED=false
 else
     # Remote çalıştırma (curl | bash)
-    echo -e "\033[1;33m⚠️  GitHub üzerinden '$GITHUB_REPO' modülleri indiriliyor...\033[0m"
+    echo -e "\033[1;33m🚀  GitHub üzerinden '$GITHUB_REPO' modülleri indiriliyor...\033[0m"
     
     # Geçici dizin oluştur
     MODULES_DIR="$(mktemp -d)"
