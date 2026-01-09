@@ -34,7 +34,8 @@ install_tailscale() {
         # IP Forwarding aktif et
         echo 'net.ipv4.ip_forward = 1' | sudo tee -a /etc/sysctl.d/99-tailscale.conf
         echo 'net.ipv6.conf.all.forwarding = 1' | sudo tee -a /etc/sysctl.d/99-tailscale.conf
-        sudo sysctl -p /etc/sysctl.d/99-tailscale.conf >> "$LOG_FILE" 2>&1
+        # sysctl hatası scripti durdurmasın (Sanal ortamlarda yazma izni olmayabilir)
+        sudo sysctl -p /etc/sysctl.d/99-tailscale.conf >> "$LOG_FILE" 2>&1 || print_message "⚠️  Uyarı: sysctl ayarları uygulanamadı (Sanal ortam kısıtlaması olabilir)." "$YELLOW"
         
         print_message "🚀 Performans Optimizasyonu İçin Donanım Seçin:" "$CYAN"
         echo "1) ☁️  Standart VPS / x86 Sunucu (DigitalOcean, AWS, vb.)"
@@ -54,7 +55,7 @@ net.ipv4.tcp_congestion_control = bbr
 net.core.rmem_max = 26214400
 net.core.wmem_max = 26214400
 EOF
-                sudo sysctl -p /etc/sysctl.d/99-tailscale.conf >> "$LOG_FILE" 2>&1
+                sudo sysctl -p /etc/sysctl.d/99-tailscale.conf >> "$LOG_FILE" 2>&1 || print_message "⚠️  Uyarı: BBR/Buffer ayarları uygulanamadı (Kernel desteği olmayabilir)." "$YELLOW"
                 ;;
                 
             2)
