@@ -12,19 +12,20 @@ install_selected_apps() {
     echo ""
     echo "1) 🐳 Docker & Docker Compose (Optimize edilmiş)"
     echo "2) 🕸️  Tailscale (Güvenli VPN)"
-    echo "3) 🐚 Zsh & Oh My Zsh (Gelişmiş Terminal)"
-    echo "4) ⏩ Hepsini kur (1, 2, 3)"
-    echo "5) ⏭️  Atla (Kurulumu tamamla)"
+    echo "3) 🛡️  WireGuard VPN Server (Self-Hosted)"
+    echo "4) 🐚 Zsh & Oh My Zsh (Gelişmiş Terminal)"
+    echo "5) ⏩ Hepsini kur (1, 2, 3, 4)"
+    echo "6) ⏭️  Atla (Kurulumu tamamla)"
     echo ""
     
     echo "Çoklu seçim için boşluk bırakarak yazabilirsiniz (örn: 1 3)"
     read -p "Seçiminiz: " app_choices
     
     # Seçimleri diziye çevir
-    # Eğer 4 (Hepsi) seçildiyse diğerlerini yoksay ve hepsini ekle
-    if [[ "$app_choices" =~ 4 ]]; then
-        app_choices="1 2 3"
-    elif [[ "$app_choices" =~ 5 ]]; then
+    # Eğer 5 (Hepsi) seçildiyse diğerlerini yoksay ve hepsini ekle
+    if [[ "$app_choices" =~ 5 ]]; then
+        app_choices="1 2 3 4"
+    elif [[ "$app_choices" =~ 6 ]]; then
         print_message "ℹ️  Ekstra uygulama kurulumu atlanıyor..." "$YELLOW"
         return
     fi
@@ -48,6 +49,14 @@ install_selected_apps() {
                 fi
                 ;;
             3)
+                if [[ -f "$MODULES_DIR/apps/wireguard.sh" ]]; then
+                    source "$MODULES_DIR/apps/wireguard.sh"
+                    install_wireguard
+                else
+                    print_message "❌ WireGuard modülü bulunamadı!" "$RED"
+                fi
+                ;;
+            4)
                 if [[ -f "$MODULES_DIR/apps/zsh.sh" ]]; then
                     source "$MODULES_DIR/apps/zsh.sh"
                     install_zsh

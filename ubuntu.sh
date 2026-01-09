@@ -33,7 +33,7 @@ else
     MODULES=("utils.sh" "system.sh" "user.sh" "ssh.sh" "security.sh" "summary.sh" "apps_menu.sh")
     
     # Apps alt klasörü ve modülleri
-    APPS_MODULES=("apps/docker.sh" "apps/tailscale.sh" "apps/zsh.sh")
+    APPS_MODULES=("apps/docker.sh" "apps/tailscale.sh" "apps/zsh.sh" "apps/wireguard.sh")
     
     # Gerekli araç kontrolü
     if ! command -v curl &> /dev/null; then
